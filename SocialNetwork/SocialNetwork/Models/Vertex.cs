@@ -1,20 +1,44 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace SocialNetwork
+namespace SocialNetwork.Models
 {
     public class Vertex<T> 
     {
+       
+        public Vertex()
+        {
+            if (Neighbors == null)
+            {
+                Neighbors = new List<Vertex<T>>();
+            }
+        }
+
         public string VertexValue { get; set; }
 
-        List<Vertex<T>> Neighbors { get; set; }
+        private List<Vertex<T>> Neighbors { get; set; }
 
-        public void AddEdge(Vertex<T> vertex)
+        public async Task AddEdge(Vertex<T> vertex)
         {
-            Neighbors.Add(vertex);
+            var task = new Task(() =>
+            {
+                if (!Neighbors.Contains(vertex))
+                {
+                    lock (this)
+                    {
+                        Neighbors.Add(vertex); 
+                    }
+                }
+            });
+            try
+            {
+                task.Start();
+                await task;
+            }
+            catch (System.Exception ex)
+            {
+                throw ex;
+            }
         }
     }
 }
