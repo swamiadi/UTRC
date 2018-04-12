@@ -6,28 +6,32 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using GraphCollection;
+using Newtonsoft.Json;
 using SocialNetwork.Helpers;
 using SocialNetwork.Models;
-
+using System.IO;
+using System.Runtime.Serialization.Formatters.Binary;
 
 namespace SocialNetwork
 {
-    internal class Program
+    class Program
     {
-        private static void Main(string[] args)
+        static void Main(string[] args)
         {
-            try
+            if (File.Exists(@"Model.txt"))
             {
-                var vertexes = new ConcurrentBag<Vertex<string>>();
+                var modelfile = System.IO.File.ReadAllText(@"Model.txt");
+                var graph = StringToObject(modelfile) as List<GraphNode<string>>;
+                FindShortestPath(graph);
+
+                Console.ReadLine();
+            }
+            #region No Model
+            else
+            {
+               
                 var networks = VertexHelper.GetNetworks();
-                foreach (var vertexitem in VertexHelper.GetVertexs(networks))
-                {
-                    var vertex = new Vertex<string> { VertexValue = vertexitem };
-                    vertexes.Add(vertex);
-                }
-             
-
-
 
                 int loopcount = 0;
                 var exceptions = new ConcurrentQueue<Exception>();
@@ -35,24 +39,38 @@ namespace SocialNetwork
 
                 var tokenSource = new CancellationTokenSource();
                 CancellationToken ct = tokenSource.Token;
+                var graphnodes = new List<GraphNode<string>>();
+
+                foreach (var item in VertexHelper.GetVertexs(networks))
+                {
+                    GraphNode<string> node = new GraphNode<string>(item);
+                    graphnodes.Add(node);
+                }
 
                 Task task = Task.Factory.StartNew(delegate
                 {
                     // Were we already canceled?
                     ct.ThrowIfCancellationRequested();
-                    var loopResult = Parallel.ForEach(networks, new ParallelOptions
+                    var loopResult = Parallel.ForEach(graphnodes, new ParallelOptions
                     {
                         MaxDegreeOfParallelism =
                             Environment.ProcessorCount,
                         CancellationToken = new CancellationToken()
-                    }, (networkitem) =>
+                    }, (node) =>
                     {
                         try
                         {
+
+
                             Interlocked.Increment(ref loopcount);
                             Console.WriteLine(loopcount);
-                            var vertex = vertexes.FirstOrDefault(x => x.VertexValue == networkitem.PersonA);
-                            vertex?.AddEdge(vertexes.FirstOrDefault(x => x.VertexValue == networkitem.PersonB));
+
+                            foreach (var item in networks.Where(x => x.PersonA == node.Value))
+                            {
+                                node.AddNeighbour(graphnodes.FirstOrDefault(x => x.Value == item.PersonB), 1);
+                            }
+
+
                         }
                         catch (Exception e)
                         {
@@ -64,37 +82,69 @@ namespace SocialNetwork
 
                 }, tokenSource.Token); // Pass same token to StartNew.
 
-                task.ContinueWith(antecendent => SignalCompletion(watch), ct);
+                task.ContinueWith(antecendent => SignalCompletion(watch, graphnodes), ct);
 
-
-                if (exceptions.Count > 0) throw new AggregateException(exceptions);
-
-
-                Console.ReadLine();
-                //foreach (var networkitem in networks)
-                //{
-
-                //}
             }
-            catch (Exception ex)
+            #endregion
+            Console.ReadLine();
+        }
+
+        private static void SignalCompletion(Stopwatch watch, List<GraphNode<string>> graph)
+        {
+            var stringvalue = ObjectToString(graph);
+            System.IO.File.WriteAllText(@"Model.txt", stringvalue);
+
+            watch.Stop();
+            var elapsedms = watch.ElapsedMilliseconds;
+            Console.WriteLine(TimeSpan.FromMilliseconds(elapsedms).TotalMinutes);
+
+            FindShortestPath(graph);
+
+            Console.ReadLine();
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="graph"></param>
+        /// <param name="from"></param>
+        /// <param name="to"></param>
+        private static void FindShortestPath(List<GraphNode<string>> graph, string from = "", string to = "")
+        {
+
+            var watch = System.Diagnostics.Stopwatch.StartNew();
+            var dijkstra = new Dijkstra<string>(graph);
+            var path = dijkstra.FindShortestPathBetween(graph.FirstOrDefault(x => x.Value == "STACEY_STRIMPLE"), graph.FirstOrDefault(x => x.Value == "RICH_OMLI"));
+            watch.Stop();
+            var elapsedms = watch.ElapsedMilliseconds;
+            Console.WriteLine(TimeSpan.FromMilliseconds(elapsedms).TotalMinutes);
+            foreach (var item in path)
             {
-
-                throw ex;
+                Console.WriteLine(item.Value + Environment.NewLine);
             }
 
-
-          
+            Console.ReadLine();
         }
 
 
-        private static void SignalCompletion(Stopwatch watch)
+        public static string ObjectToString(object obj)
         {
-            double elapseds = 0;
+            using (MemoryStream ms = new MemoryStream())
+            {
+                new BinaryFormatter().Serialize(ms, obj);
+                return Convert.ToBase64String(ms.ToArray());
+            }
+        }
 
-            watch.Stop();
-            elapseds = watch.ElapsedMilliseconds * 0.001;
-            Console.WriteLine(elapseds);
-            Console.ReadLine();
+        public static object StringToObject(string base64String)
+        {
+            byte[] bytes = Convert.FromBase64String(base64String);
+            using (MemoryStream ms = new MemoryStream(bytes, 0, bytes.Length))
+            {
+                ms.Write(bytes, 0, bytes.Length);
+                ms.Position = 0;
+                return new BinaryFormatter().Deserialize(ms);
+            }
         }
     }
 }

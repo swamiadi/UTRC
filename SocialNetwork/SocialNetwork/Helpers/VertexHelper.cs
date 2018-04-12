@@ -10,7 +10,8 @@ namespace SocialNetwork.Helpers
         internal static ConcurrentBag<string> GetVertexs(ConcurrentBag<Network> networks)
         {
             var distinctvertex = networks.Select(x => x.PersonA).Distinct().Concat(networks.Select(x=>x.PersonB).Distinct()).Distinct().ToList();
-           
+            //var distinctvertex = networks.Select(x => x.PersonA).Distinct().ToList();
+
             return new ConcurrentBag<string>(distinctvertex);
         }
 
