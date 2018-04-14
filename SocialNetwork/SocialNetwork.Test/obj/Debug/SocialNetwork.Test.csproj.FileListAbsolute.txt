@@ -1,0 +1,11 @@
+C:\Users\adityaswami89\Documents\GitHub\UTRC\SocialNetwork\SocialNetwork.Test\bin\Debug\SocialNetwork.Test.dll
+C:\Users\adityaswami89\Documents\GitHub\UTRC\SocialNetwork\SocialNetwork.Test\bin\Debug\SocialNetwork.Test.pdb
+C:\Users\adityaswami89\Documents\GitHub\UTRC\SocialNetwork\SocialNetwork.Test\bin\Debug\Microsoft.VisualStudio.QualityTools.UnitTestFramework.dll
+C:\Users\adityaswami89\Documents\GitHub\UTRC\SocialNetwork\SocialNetwork.Test\bin\Debug\SocialNetwork.exe
+C:\Users\adityaswami89\Documents\GitHub\UTRC\SocialNetwork\SocialNetwork.Test\bin\Debug\Graphs.dll
+C:\Users\adityaswami89\Documents\GitHub\UTRC\SocialNetwork\SocialNetwork.Test\bin\Debug\SocialNetwork.pdb
+C:\Users\adityaswami89\Documents\GitHub\UTRC\SocialNetwork\SocialNetwork.Test\bin\Debug\Microsoft.VisualStudio.QualityTools.UnitTestFramework.xml
+C:\Users\adityaswami89\Documents\GitHub\UTRC\SocialNetwork\SocialNetwork.Test\bin\Debug\Graphs.pdb
+C:\Users\adityaswami89\Documents\GitHub\UTRC\SocialNetwork\SocialNetwork.Test\obj\Debug\SocialNetwork.Test.csprojResolveAssemblyReference.cache
+C:\Users\adityaswami89\Documents\GitHub\UTRC\SocialNetwork\SocialNetwork.Test\obj\Debug\SocialNetwork.Test.dll
+C:\Users\adityaswami89\Documents\GitHub\UTRC\SocialNetwork\SocialNetwork.Test\obj\Debug\SocialNetwork.Test.pdb

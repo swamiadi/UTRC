@@ -34,8 +34,8 @@ namespace SocialNetwork
             if (File.Exists(@"Model.txt"))
             {
                 var modelfile = System.IO.File.ReadAllText(@"Model.txt");
-                var graph = StringToObject(modelfile) as List<GraphNode<string>>;
-                Console.Write("Total number of people in the social network : {0}",graph?.Count);
+                var graph = StringToObject(modelfile) as ConcurrentBag<GraphNode<string>>;
+                Console.Write("Total number of people in the social network : {0}", graph?.Count);
                 FindShortestPath(graph, personA, personB);
 
                 Console.ReadLine();
@@ -43,65 +43,60 @@ namespace SocialNetwork
             #region No Model
             else
             {
-               
                 var networks = VertexHelper.GetNetworks();
-
-                int loopcount = 0;
-                var exceptions = new ConcurrentQueue<Exception>();
-                var watch = Stopwatch.StartNew();
-
-                var tokenSource = new CancellationTokenSource();
-                CancellationToken ct = tokenSource.Token;
-                var graphnodes = new List<GraphNode<string>>();
-
-                foreach (var item in VertexHelper.GetVertexs(networks))
-                {
-                    GraphNode<string> node = new GraphNode<string>(item);
-                    graphnodes.Add(node);
-                }
+                var graphnodes = VertexHelper.GetGraphNodes(VertexHelper.GetVertexs(networks));
                 Console.Write("Total number of people in the social network : {0}", graphnodes.Count);
-                Task task = Task.Factory.StartNew(delegate
-                {
-                    // Were we already canceled?
-                    ct.ThrowIfCancellationRequested();
-                    var loopResult = Parallel.ForEach(graphnodes, new ParallelOptions
-                    {
-                        MaxDegreeOfParallelism =
-                            Environment.ProcessorCount,
-                        CancellationToken = new CancellationToken()
-                    }, (node) =>
-                    {
-                        try
-                        {
-
-                            Interlocked.Increment(ref loopcount);
-                            Console.WriteLine(loopcount);
-
-                            foreach (var item in networks.Where(x => x.PersonA == node.Value))
-                            {
-                                node.AddNeighbour(graphnodes.FirstOrDefault(x => x.Value == item.PersonB), 1);
-                            }
-
-
-                        }
-                        catch (Exception e)
-                        {
-
-                            exceptions.Enqueue(e);
-                        }
-
-                    });
-
-                }, tokenSource.Token); // Pass same token to StartNew.
-
-                task.ContinueWith(antecendent => SignalCompletion(watch, graphnodes,personA,personB), ct);
-
+                FormNodes(graphnodes, networks, personA, personB);
             }
             #endregion
             Console.ReadLine();
         }
 
-        private static void SignalCompletion(Stopwatch watch, List<GraphNode<string>> graph, string PersonA, string PersonB)
+        private static void FormNodes(ConcurrentBag<GraphNode<string>> graphnodes, ConcurrentBag<Network> networks, string personA, string personB)
+        {
+            var watch = Stopwatch.StartNew();
+            int loopcount = 0;
+            var tokenSource = new CancellationTokenSource();
+            CancellationToken ct = tokenSource.Token;
+            var exceptions = new ConcurrentQueue<Exception>();
+            Task task = Task.Factory.StartNew(delegate
+            {
+                //Cancelled 
+                ct.ThrowIfCancellationRequested();
+                var loopResult = Parallel.ForEach(graphnodes, new ParallelOptions
+                {
+                    MaxDegreeOfParallelism =
+                        Environment.ProcessorCount,
+                    CancellationToken = new CancellationToken()
+                }, (node) =>
+                {
+                    try
+                    {
+
+                        Interlocked.Increment(ref loopcount);
+                        Console.WriteLine(loopcount);
+
+                        foreach (var item in networks.Where(x => x.PersonA == node.Value))
+                        {
+                            node.AddNeighbour(graphnodes.FirstOrDefault(x => x.Value == item.PersonB), 1);
+                        }
+
+
+                    }
+                    catch (Exception e)
+                    {
+
+                        exceptions.Enqueue(e);
+                    }
+
+                });
+
+            }, tokenSource.Token); // Pass same token to StartNew.
+
+            task.ContinueWith(antecendent => SignalCompletion(watch, graphnodes, personA, personB), ct);
+        }
+
+        private static void SignalCompletion(Stopwatch watch, ConcurrentBag<GraphNode<string>> graph, string PersonA, string PersonB)
         {
             try
             {
@@ -128,18 +123,22 @@ namespace SocialNetwork
         /// <param name="graph"></param>
         /// <param name="from"></param>
         /// <param name="to"></param>
-        private static void FindShortestPath(List<GraphNode<string>> graph, string from , string to )
+        private static void FindShortestPath(ConcurrentBag<GraphNode<string>> graph, string from, string to)
         {
 
             try
             {
+                var spinner = new Spinner(0, 0);
+
+                spinner.Start();
                 var watch = System.Diagnostics.Stopwatch.StartNew();
                 var dijkstra = new Dijkstra<string>(graph);
                 var path = dijkstra.FindShortestPathBetween(graph.FirstOrDefault(x => x.Value == from), graph.FirstOrDefault(x => x.Value == to));
+                spinner.Stop();
                 watch.Stop();
                 var elapsedms = watch.ElapsedMilliseconds;
-                Console.WriteLine("Total Time required to search : {0}",TimeSpan.FromMilliseconds(elapsedms).TotalMinutes);
-                Console.WriteLine(Environment.NewLine + "Distance between {0} and {1} is {2}",from,to,path.Count - 1);
+                Console.WriteLine("Total Time required to search : {0}", TimeSpan.FromMilliseconds(elapsedms).TotalMinutes);
+                Console.WriteLine(Environment.NewLine + "Distance between {0} and {1} is {2}", from, to, path.Count - 1);
                 foreach (var item in path)
                 {
                     Console.WriteLine(item.Value + Environment.NewLine);
