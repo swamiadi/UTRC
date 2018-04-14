@@ -16,42 +16,58 @@ using System.Runtime.Serialization.Formatters.Binary;
 namespace SocialNetwork
 {
     /// <summary>
-    /// 
+    /// Program class
     /// </summary>
     class Program
     {
         /// <summary>
-        /// 
+        /// Main method
         /// </summary>
         /// <param name="args"></param>
         static void Main(string[] args)
         {
-            Console.Write("Please enter the values of A" + Environment.NewLine);
-            var personA = Console.ReadLine()?.Trim();
-            Console.Write("Please enter the values of B" + Environment.NewLine);
-            var personB = Console.ReadLine()?.Trim();
-
-            if (File.Exists(@"Model.txt"))
+            try
             {
-                var modelfile = System.IO.File.ReadAllText(@"Model.txt");
-                var graph = StringToObject(modelfile) as ConcurrentBag<GraphNode<string>>;
-                Console.Write("Total number of people in the social network : {0}", graph?.Count);
-                FindShortestPath(graph, personA, personB);
+                Console.Write("Please enter the values of A" + Environment.NewLine);
+                var personA = Console.ReadLine()?.Trim();
+                Console.Write("Please enter the values of B" + Environment.NewLine);
+                var personB = Console.ReadLine()?.Trim();
 
+
+                if (File.Exists(@"Model.txt"))
+                {
+                    var modelfile = System.IO.File.ReadAllText(@"Model.txt");
+                    var graph = StringToObject(modelfile) as List<GraphNode<string>>;
+                    Console.Write("Total number of people in the social network : {0}", graph?.Count);
+                    FindShortestPath(new ConcurrentBag<GraphNode<string>>(graph), personA, personB);
+
+                    Console.ReadLine();
+                }
+                #region No Model
+                else
+                {
+                    var networks = VertexHelper.GetNetworks();
+                    var graphnodes = VertexHelper.GetGraphNodes(VertexHelper.GetVertexs(networks));
+                    Console.Write("Total number of people in the social network : {0}", graphnodes.Count);
+                    FormNodes(graphnodes, networks, personA, personB);
+                }
+                #endregion
                 Console.ReadLine();
             }
-            #region No Model
-            else
+            catch (Exception ex)
             {
-                var networks = VertexHelper.GetNetworks();
-                var graphnodes = VertexHelper.GetGraphNodes(VertexHelper.GetVertexs(networks));
-                Console.Write("Total number of people in the social network : {0}", graphnodes.Count);
-                FormNodes(graphnodes, networks, personA, personB);
+
+                Console.Write(ex.Message + "Please try again...");
             }
-            #endregion
-            Console.ReadLine();
         }
 
+        /// <summary>
+        /// FOrm Nodes
+        /// </summary>
+        /// <param name="graphnodes"></param>
+        /// <param name="networks"></param>
+        /// <param name="personA"></param>
+        /// <param name="personB"></param>
         private static void FormNodes(ConcurrentBag<GraphNode<string>> graphnodes, ConcurrentBag<Network> networks, string personA, string personB)
         {
             var watch = Stopwatch.StartNew();
@@ -59,6 +75,9 @@ namespace SocialNetwork
             var tokenSource = new CancellationTokenSource();
             CancellationToken ct = tokenSource.Token;
             var exceptions = new ConcurrentQueue<Exception>();
+            var spinner = new Spinner(0, 5);
+
+            spinner.Start();
             Task task = Task.Factory.StartNew(delegate
             {
                 //Cancelled 
@@ -93,13 +112,22 @@ namespace SocialNetwork
 
             }, tokenSource.Token); // Pass same token to StartNew.
 
-            task.ContinueWith(antecendent => SignalCompletion(watch, graphnodes, personA, personB), ct);
+            task.ContinueWith(antecendent => Completion(watch, graphnodes, personA, personB, spinner), ct);
         }
 
-        private static void SignalCompletion(Stopwatch watch, ConcurrentBag<GraphNode<string>> graph, string PersonA, string PersonB)
+        /// <summary>
+        /// Completion event
+        /// </summary>
+        /// <param name="watch"></param>
+        /// <param name="graph"></param>
+        /// <param name="personA"></param>
+        /// <param name="personB"></param>
+        /// <param name="spinner"></param>
+        private static void Completion(Stopwatch watch, ConcurrentBag<GraphNode<string>> graph, string personA, string personB, Spinner spinner)
         {
             try
             {
+                spinner.Stop();
                 var stringvalue = ObjectToString(graph);
                 System.IO.File.WriteAllText(@"Model.txt", stringvalue);
 
@@ -107,7 +135,7 @@ namespace SocialNetwork
                 var elapsedms = watch.ElapsedMilliseconds;
                 Console.WriteLine(TimeSpan.FromMilliseconds(elapsedms).TotalMinutes);
 
-                FindShortestPath(graph, PersonA, PersonB);
+                FindShortestPath(graph, personA, personB);
 
                 Console.ReadLine();
             }
@@ -128,7 +156,7 @@ namespace SocialNetwork
 
             try
             {
-                var spinner = new Spinner(0, 0);
+                var spinner = new Spinner(0, 5);
 
                 spinner.Start();
                 var watch = System.Diagnostics.Stopwatch.StartNew();
@@ -153,7 +181,11 @@ namespace SocialNetwork
             }
         }
 
-
+        /// <summary>
+        /// Object to string conversion
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <returns></returns>
         private static string ObjectToString(object obj)
         {
             using (MemoryStream ms = new MemoryStream())
@@ -163,6 +195,11 @@ namespace SocialNetwork
             }
         }
 
+        /// <summary>
+        /// String to object conversion
+        /// </summary>
+        /// <param name="base64String"></param>
+        /// <returns></returns>
         private static object StringToObject(string base64String)
         {
             byte[] bytes = Convert.FromBase64String(base64String);

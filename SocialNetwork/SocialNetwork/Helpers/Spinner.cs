@@ -7,6 +7,9 @@ using System.Threading.Tasks;
 
 namespace SocialNetwork.Helpers
 {
+    /// <summary>
+    /// Spinner Class - Code take from Stackoverflow
+    /// </summary>
     public class Spinner : IDisposable
     {
         private const string Sequence = @"/-\|";

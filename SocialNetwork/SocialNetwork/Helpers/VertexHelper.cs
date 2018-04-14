@@ -9,6 +9,11 @@ namespace SocialNetwork.Helpers
 {
     public static class VertexHelper
     {
+        /// <summary>
+        /// Get Vertexs
+        /// </summary>
+        /// <param name="networks"></param>
+        /// <returns></returns>
         public static ConcurrentBag<string> GetVertexs(ConcurrentBag<Network> networks)
         {
             var distinctvertex = networks.Select(x => x.PersonA).Distinct().Concat(networks.Select(x=>x.PersonB).Distinct()).Distinct().ToList();
@@ -17,6 +22,10 @@ namespace SocialNetwork.Helpers
             return new ConcurrentBag<string>(distinctvertex);
         }
 
+        /// <summary>
+        /// Get Networks
+        /// </summary>
+        /// <returns></returns>
         public static ConcurrentBag<Network> GetNetworks()
         {
             var text = System.IO.File.ReadAllText(@"../../SocialNetwork.txt");
@@ -35,7 +44,11 @@ namespace SocialNetwork.Helpers
 
         }
 
-
+        /// <summary>
+        /// Get Graph Nodes
+        /// </summary>
+        /// <param name="vertex"></param>
+        /// <returns></returns>
         public static ConcurrentBag<GraphNode<string>> GetGraphNodes(ConcurrentBag<string> vertex)
         {
             ConcurrentBag<GraphNode<string>> graphnodes = new ConcurrentBag<GraphNode<string>>();

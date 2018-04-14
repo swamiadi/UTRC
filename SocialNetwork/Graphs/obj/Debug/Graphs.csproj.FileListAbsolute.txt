@@ -1,5 +1,4 @@
 C:\Users\adityaswami89\Documents\GitHub\UTRC\SocialNetwork\Graphs\bin\Debug\Graphs.dll
 C:\Users\adityaswami89\Documents\GitHub\UTRC\SocialNetwork\Graphs\bin\Debug\Graphs.pdb
-C:\Users\adityaswami89\Documents\GitHub\UTRC\SocialNetwork\Graphs\obj\Debug\Graphs.csprojResolveAssemblyReference.cache
 C:\Users\adityaswami89\Documents\GitHub\UTRC\SocialNetwork\Graphs\obj\Debug\Graphs.dll
 C:\Users\adityaswami89\Documents\GitHub\UTRC\SocialNetwork\Graphs\obj\Debug\Graphs.pdb
