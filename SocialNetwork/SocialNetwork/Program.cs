@@ -37,9 +37,9 @@ namespace SocialNetwork
                 if (File.Exists(@"Model.txt"))
                 {
                     var modelfile = System.IO.File.ReadAllText(@"Model.txt");
-                    var graph = StringToObject(modelfile) as List<GraphNode<string>>;
+                    var graph = StringToObject(modelfile) as ConcurrentBag<GraphNode<string>>;
                     Console.Write("Total number of people in the social network : {0}", graph?.Count);
-                    FindShortestPath(new ConcurrentBag<GraphNode<string>>(graph), personA, personB);
+                    FindShortestPath(graph, personA, personB);
 
                     Console.ReadLine();
                 }
@@ -58,6 +58,7 @@ namespace SocialNetwork
             {
 
                 Console.Write(ex.Message + "Please try again...");
+                Console.ReadLine();
             }
         }
 
@@ -93,7 +94,7 @@ namespace SocialNetwork
                     {
 
                         Interlocked.Increment(ref loopcount);
-                        Console.WriteLine(loopcount);
+                        //Console.WriteLine(loopcount);
 
                         foreach (var item in networks.Where(x => x.PersonA == node.Value))
                         {
